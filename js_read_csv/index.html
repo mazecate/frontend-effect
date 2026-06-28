@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read CSV with Header Toggle</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .options { margin: 15px 0; }
+        pre { background: #f4f4f4; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Upload and Read CSV</h2>
+    
+    <input type="file" id="csvFileInput" accept=".csv" />
+
+    <div class="options">
+        <label>
+            <input type="checkbox" id="useHeaderObj" checked /> Use first row as headers (Objects)
+        </label>
+    </div>
+
+    <h3>Result:</h3>
+    <pre id="output">Upload a file to see the results...</pre>
+
+    <script>
+        document.getElementById('csvFileInput').addEventListener('change', handleFile);
+        document.getElementById('useHeaderObj').addEventListener('change', handleFile);
+
+        function handleFile() {
+            const fileInput = document.getElementById('csvFileInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const useHeaders = document.getElementById('useHeaderObj').checked;
+                
+                // Parse the CSV based on checkbox state
+                const parsedData = parseCSV(text, useHeaders);
+                
+                // Display the output
+                document.getElementById('output').textContent = JSON.stringify(parsedData, null, 2);
+                console.log(parsedData);
+            };
+
+            reader.readAsText(file);
+        }
+
+        function parseCSV(text, useHeaders) {
+            // Split text into rows and remove empty lines
+            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+            
+            // Convert rows into a 2D array of values
+            const matrix = lines.map(line => line.split(','));
+            
+            if (matrix.length === 0) return [];
+
+            if (useHeaders) {
+                // Get the first row to use as keys/headers
+                const headers = matrix[0].map(h => h.trim());
+                const resultObjects = [];
+
+                // Loop through the rest of the rows (starting at index 1)
+                for (let i = 1; i < matrix.length; i++) {
+                    const row = matrix[i];
+                    const obj = {};
+                    
+                    headers.forEach((header, index) => {
+                        // Assign values to header keys (default to empty string if missing)
+                        obj[header] = row[index] ? row[index].trim() : '';
+                    });
+                    
+                    resultObjects.push(obj);
+                }
+                return resultObjects;
+            } else {
+                // Just return the raw 2D array without matching headers
+                return matrix.map(row => row.map(cell => cell.trim()));
+            }
+        }
+    </script>
+
+</body>
+</html>
